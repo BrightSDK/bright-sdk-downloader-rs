@@ -1,0 +1,39 @@
+name: E2E
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    environment: e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: build
+        run: cargo build --release
+      - name: resolve (android)
+        run: ./target/release/bright-sdk-downloader resolve -p android > /dev/null
+        env:
+          SDK_API_KEY: ${{ secrets.SDK_API_KEY }}
+      - name: resolve (tizen)
+        run: ./target/release/bright-sdk-downloader resolve -p tizen > /dev/null
+        env:
+          SDK_API_KEY: ${{ secrets.SDK_API_KEY }}
+      - name: platforms
+        run: ./target/release/bright-sdk-downloader platforms > /dev/null
+        env:
+          SDK_API_KEY: ${{ secrets.SDK_API_KEY }}
+      - name: fetch (tizen)
+        run: |
+          ./target/release/bright-sdk-downloader fetch -p tizen -o /tmp/sdk-e2e > /dev/null 2>&1
+          test -d /tmp/sdk-e2e
+        env:
+          SDK_API_KEY: ${{ secrets.SDK_API_KEY }}
+      - name: fetch (android, tar.gz)
+        run: |
+          ./target/release/bright-sdk-downloader fetch -p android -o /tmp/sdk-e2e-android > /dev/null 2>&1
+          test -d /tmp/sdk-e2e-android
+        env:
+          SDK_API_KEY: ${{ secrets.SDK_API_KEY }}

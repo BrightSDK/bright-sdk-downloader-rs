@@ -1,0 +1,159 @@
+use bright_sdk_download::{fetch_sdk_with_progress, list_platforms, resolve_sdk, Step};
+use indicatif::{ProgressBar, ProgressStyle};
+use std::env;
+use std::process;
+use std::time::Instant;
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    let cmd = args.get(1).map(|s| s.as_str()).unwrap_or("");
+
+    let result = match cmd {
+        "resolve" => cmd_resolve(&args[2..]),
+        "fetch" => cmd_fetch(&args[2..]),
+        "platforms" => cmd_platforms(),
+        _ => {
+            print_usage();
+            process::exit(if cmd.is_empty() { 0 } else { 1 });
+        }
+    };
+
+    if let Err(e) = result {
+        eprintln!("Error: {e}");
+        process::exit(1);
+    }
+}
+
+fn cmd_resolve(args: &[String]) -> Result<(), bright_sdk_download::Error> {
+    let (platform, version, _) = parse_args(args);
+    let platform = platform.unwrap_or_else(|| {
+        eprintln!("Usage: bright-sdk-downloader resolve -p <platform> [-v <version>]");
+        process::exit(1);
+    });
+    let result = resolve_sdk(&platform, &version)?;
+    println!("{}", serde_json::to_string(&result).unwrap());
+    Ok(())
+}
+
+fn cmd_fetch(args: &[String]) -> Result<(), bright_sdk_download::Error> {
+    let (platform, version, output) = parse_args(args);
+    let platform = platform.unwrap_or_else(|| {
+        eprintln!("Usage: bright-sdk-downloader fetch -p <platform> [-v <version>] [-o <dir>]");
+        process::exit(1);
+    });
+
+    let start = Instant::now();
+    let mut step_times: Vec<(Step, f64)> = Vec::new();
+    let mut current_step = Step::Resolve;
+    let mut step_start = Instant::now();
+
+    let pb = ProgressBar::new(100);
+    pb.set_style(
+        ProgressStyle::with_template("{bar:40.cyan/blue} {pos}% | {elapsed_precise} | {msg}")
+            .unwrap()
+            .progress_chars("██░"),
+    );
+    pb.set_message("resolve");
+    pb.set_position(0);
+
+    let pb_clone = pb.clone();
+    let result = fetch_sdk_with_progress(
+        &platform,
+        &version,
+        &output,
+        Some(Box::new(move |step, done, total| {
+            if step != current_step {
+                let elapsed = step_start.elapsed().as_secs_f64();
+                step_times.push((current_step, elapsed));
+                current_step = step;
+                step_start = Instant::now();
+            }
+            let pct = match step {
+                Step::Resolve => 5,
+                Step::Download => {
+                    if total > 0 {
+                        5 + ((done as f64 / total as f64) * 80.0) as u64
+                    } else {
+                        5
+                    }
+                }
+                Step::Verify => 88,
+                Step::Extract => 95,
+            };
+            pb_clone.set_position(pct.min(100));
+            pb_clone.set_message(step.to_string());
+        })),
+    );
+
+    pb.set_position(100);
+    pb.set_message("done");
+    pb.finish_and_clear();
+
+    let result = result?;
+
+    let total_secs = start.elapsed().as_secs_f64();
+    eprintln!("Done → {} ({:.1}s)", result.output, total_secs);
+    println!("{}", serde_json::to_string(&result).unwrap());
+    Ok(())
+}
+
+fn cmd_platforms() -> Result<(), bright_sdk_download::Error> {
+    let platforms = list_platforms()?;
+    println!("{}", serde_json::to_string(&platforms).unwrap());
+    Ok(())
+}
+
+fn parse_args(args: &[String]) -> (Option<String>, String, String) {
+    let mut platform = None;
+    let mut version = "latest".to_string();
+    let mut output = ".".to_string();
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "-p" | "--platform" => {
+                i += 1;
+                if i < args.len() {
+                    platform = Some(args[i].clone());
+                }
+            }
+            "-v" | "--version" => {
+                i += 1;
+                if i < args.len() {
+                    version = args[i].clone();
+                }
+            }
+            "-o" | "--output" => {
+                i += 1;
+                if i < args.len() {
+                    output = args[i].clone();
+                }
+            }
+            other if !other.starts_with('-') && platform.is_none() => {
+                platform = Some(other.to_string());
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    (platform, version, output)
+}
+
+fn print_usage() {
+    eprintln!(
+        "bright-sdk-downloader — BrightSDK download CLI (Rust)\n\n\
+         Commands:\n\
+         \x20 resolve    Resolve version + download URL (JSON)\n\
+         \x20 fetch      Download and extract SDK archive\n\
+         \x20 platforms  List available platform keys\n\n\
+         Options:\n\
+         \x20 -p, --platform   Platform key (android, ios, tizen...)\n\
+         \x20 -v, --version    Version or \"latest\" (default: latest)\n\
+         \x20 -o, --output     Output directory (default: .)\n\n\
+         Environment:\n\
+         \x20 SDK_API_KEY      Required. BrightSDK API key.\n\n\
+         Examples:\n\
+         \x20 bright-sdk-downloader resolve -p android\n\
+         \x20 bright-sdk-downloader fetch -p ios -o ./libs\n\
+         \x20 bright-sdk-downloader platforms"
+    );
+}

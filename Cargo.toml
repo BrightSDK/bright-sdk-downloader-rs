@@ -1,0 +1,31 @@
+[package]
+name = "bright_sdk_downloader"
+version = "0.1.0"
+edition = "2021"
+description = "BrightSDK download library + CLI — resolve versions, fetch and extract SDK archives"
+license = "MIT"
+
+[lib]
+name = "bright_sdk_download"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "bright-sdk-downloader"
+path = "src/bin/cli.rs"
+
+[dependencies]
+ureq = { version = "2", default-features = false, features = ["native-tls"] }
+native-tls = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+flate2 = "1"
+tar = "0.4"
+sha2 = "0.10"
+indicatif = "0.17"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1

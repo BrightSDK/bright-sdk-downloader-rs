@@ -1,0 +1,20 @@
+# Cross-compilation targets for CI
+# Install with: rustup target add <target>
+
+# Primary targets (same as the JS pkg binaries)
+# rustup target add x86_64-unknown-linux-gnu
+# rustup target add x86_64-apple-darwin
+# rustup target add aarch64-apple-darwin
+# rustup target add x86_64-pc-windows-gnu
+
+# Build all targets (use `cross` for Linux from macOS):
+#   cargo build --release --target aarch64-apple-darwin
+#   cargo build --release --target x86_64-apple-darwin
+#   cross build --release --target x86_64-unknown-linux-gnu
+#   cross build --release --target x86_64-pc-windows-gnu
+
+# Output:
+#   target/<triple>/release/bright-sdk           (CLI binary)
+#   target/<triple>/release/libbright_sdk_downloader.dylib  (macOS shared lib)
+#   target/<triple>/release/libbright_sdk_downloader.so     (Linux shared lib)
+#   target/<triple>/release/bright_sdk_downloader.dll       (Windows DLL)
