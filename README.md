@@ -4,7 +4,8 @@
 
 [![Lint](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/lint.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/lint.yml)
 [![Test](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml)
-[![Build](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/release.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/release.yml)
+[![E2E](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml)
+[![Release](https://img.shields.io/github/v/release/BrightSDK/bright-sdk-downloader-rs)](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest)
 
 ## Demo
 
@@ -29,10 +30,16 @@ Single source of truth for downloading BrightSDK archives across all integration
 
 | Platform | CLI binary | Shared library |
 |----------|-----------|----------------|
-| Linux x64 | `bright-sdk-downloader-linux-x64` | `libbright_sdk_download.so` |
-| macOS x64 | `bright-sdk-downloader-macos-x64` | `libbright_sdk_download.dylib` |
-| macOS ARM64 | `bright-sdk-downloader-macos-arm64` | `libbright_sdk_download.dylib` |
-| Windows x64 | `bright-sdk-downloader-win-x64.exe` | `bright_sdk_download.dll` |
+| Linux x64 | [bright-sdk-downloader-linux-x64](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-linux-x64) | [libbright_sdk_download.so](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/libbright_sdk_download.so) |
+| macOS x64 | [bright-sdk-downloader-macos-x64](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-macos-x64) | [libbright_sdk_download.dylib](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/libbright_sdk_download.dylib) |
+| macOS ARM64 | [bright-sdk-downloader-macos-arm64](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-macos-arm64) | [libbright_sdk_download.dylib](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/libbright_sdk_download.dylib) |
+| Windows x64 | [bright-sdk-downloader-win-x64.exe](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-win-x64.exe) | [bright_sdk_download.dll](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright_sdk_download.dll) |
+
+Download all from [Releases](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest).
+
+## API Key
+
+All commands require an `SDK_API_KEY` environment variable. Get yours from the [BrightSDK Dashboard](https://bright-sdk.com/cp/dashboard) → Settings → API Key.
 
 ## CLI Usage
 

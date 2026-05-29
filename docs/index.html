@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bright-sdk-downloader-rs — BrightSDK Download CLI &amp; FFI Library</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0B0F1A;
+            --bg2: #111827;
+            --fg: #E2E8F0;
+            --fg-muted: #94A3B8;
+            --accent: #3ECF8E;
+            --accent-hover: #2BB77A;
+            --accent-glow: rgba(62, 207, 142, 0.15);
+            --border: #1E293B;
+            --card-bg: #1A2332;
+            --code-bg: #0F172A;
+            --red: #F87171;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 5rem 1.5rem 3rem;
+            background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+        .hero .subtitle {
+            color: var(--fg-muted);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            position: relative;
+        }
+        .badges {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .badges a { margin: 0 3px; }
+        .badges img { vertical-align: middle; height: 20px; }
+
+        /* CTA Buttons */
+        .cta-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            position: relative;
+        }
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .cta:hover { text-decoration: none; }
+        .cta-primary {
+            background: var(--accent);
+            color: #0B0F1A;
+            font-size: 1.15rem;
+            padding: 1rem 2.5rem;
+            box-shadow: 0 4px 24px rgba(62, 207, 142, 0.25);
+        }
+        .cta-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 32px rgba(62, 207, 142, 0.35);
+            transform: translateY(-1px);
+        }
+        .cta-secondary {
+            background: var(--border);
+            color: var(--fg);
+            border: 1px solid #334155;
+        }
+        .cta-secondary:hover {
+            background: #334155;
+            border-color: #475569;
+        }
+        .cta-secondary svg { opacity: 0.8; }
+
+        /* Container */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Section */
+        section {
+            padding: 3rem 0;
+        }
+        section + section {
+            border-top: 1px solid var(--border);
+        }
+
+        /* Size Cards */
+        .size-compare {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
+        }
+        .size-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .size-card:hover { border-color: #334155; }
+        .size-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .size-card .label {
+            color: var(--fg-muted);
+            font-size: 0.85rem;
+            margin-top: 0.4rem;
+        }
+        .size-card.old .value { color: var(--red); }
+
+        /* Demo */
+        .demo-section {
+            margin: 2.5rem 0;
+            text-align: center;
+        }
+        .demo-section img {
+            max-width: 100%;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Typography */
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+        h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin: 1.5rem 0 0.5rem;
+        }
+        p { margin: 0.5rem 0 1rem; }
+        ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+        li { margin: 0.3rem 0; color: var(--fg); }
+        strong { color: #fff; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Code */
+        code {
+            background: var(--code-bg);
+            padding: 0.15em 0.45em;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+            border: 1px solid var(--border);
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 0.8rem 0;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.8rem 0;
+            font-size: 0.88rem;
+        }
+        th, td {
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        th {
+            background: var(--card-bg);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        td a {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 0.82rem;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .feature-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .feature-item .icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-glow);
+            border-radius: 8px;
+        }
+        .feature-item .text {
+            font-size: 0.9rem;
+            color: var(--fg);
+        }
+
+        /* Footer */
+        footer {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: var(--fg-muted);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+        footer a { color: var(--fg-muted); }
+        footer a:hover { color: var(--accent); }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 2rem; }
+            .hero .subtitle { font-size: 1rem; }
+            .cta-primary { font-size: 1rem; padding: 0.85rem 2rem; }
+            .size-compare { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+    <img src="https://media.bright-sdk.com/2025/12/brightsdk_logo_light.svg" alt="BrightSDK" style="height:48px;margin-bottom:1rem;position:relative">
+    <h1><img src="favicon.svg" alt="" style="height:1em;vertical-align:-0.1em;margin-right:0.3em">BrightSDK Downloader</h1>
+    <p class="subtitle">High-performance CLI + FFI library for downloading BrightSDK archives. Written in Rust.</p>
+    <div class="badges">
+        <a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/lint.yml"><img src="https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
+        <a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml"><img src="https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml/badge.svg" alt="Test"></a>
+        <a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml"><img src="https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml/badge.svg" alt="E2E"></a>
+        <a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest"><img src="https://img.shields.io/github/v/release/BrightSDK/bright-sdk-downloader-rs?color=3ECF8E" alt="Release"></a>
+    </div>
+    <div class="cta-group">
+        <a class="cta cta-primary" id="download-cta" href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            <span>Download Latest Release</span>
+        </a>
+        <a class="cta cta-secondary" href="https://github.com/BrightSDK/bright-sdk-downloader-rs">
+            <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            View on GitHub
+        </a>
+    </div>
+</div>
+
+<script>
+(function() {
+    var ua = navigator.userAgent || '';
+    var p = navigator.platform || '';
+    var label, file;
+    if (/Win/.test(p)) {
+        label = 'Windows'; file = 'bright-sdk-downloader-win-x64.exe';
+    } else if (/Mac/.test(p) || /Macintosh/.test(ua)) {
+        label = /arm64|aarch64/i.test(ua) || (navigator.userAgentData &&
+            navigator.userAgentData.architecture === 'arm') ? 'macOS ARM64' : 'macOS x64';
+        file = label === 'macOS ARM64' ? 'bright-sdk-downloader-macos-arm64' : 'bright-sdk-downloader-macos-x64';
+    } else {
+        label = 'Linux x64'; file = 'bright-sdk-downloader-linux-x64';
+    }
+    var el = document.getElementById('download-cta');
+    el.querySelector('span').textContent = 'Download for ' + label;
+    el.href = 'https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/' + file;
+})();
+</script>
+
+<!-- Size Comparison -->
+<div class="container">
+    <section>
+        <div class="size-compare">
+            <div class="size-card">
+                <div class="value">1.5 MB</div>
+                <div class="label">Rust CLI binary</div>
+            </div>
+            <div class="size-card">
+                <div class="value">1.7 MB</div>
+                <div class="label">Shared library (.dll/.so/.dylib)</div>
+            </div>
+            <div class="size-card old">
+                <div class="value">48 MB</div>
+                <div class="label">Node.js version (replaced)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo -->
+    <section>
+        <div class="demo-section">
+            <img src="demo/usage.gif" alt="CLI usage demo">
+        </div>
+    </section>
+
+    <!-- What it does -->
+    <section>
+        <h2>What it does</h2>
+        <p>Single source of truth for downloading BrightSDK archives across all integration tools — CLI, Gradle plugin, Unity plugin.</p>
+
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="icon">🔍</div>
+                <div class="text">Version resolution via BrightSDK API</div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">⬇️</div>
+                <div class="text">Archive download from CDN with redirect handling</div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">📦</div>
+                <div class="text">Extraction with Zip Slip protection</div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">🔒</div>
+                <div class="text">SHA-256 integrity verification</div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">📊</div>
+                <div class="text">Progress bar with step tracking</div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">⚡</div>
+                <div class="text">Zero runtime dependencies — fully statically linked</div>
+            </div>
+        </div>
+
+        <p>Ships as:</p>
+        <ul>
+            <li><strong>Standalone CLI binary</strong> (~1.5 MB) — drop-in replacement for the Node.js version</li>
+            <li><strong>Shared library</strong> (<code>.dll</code> / <code>.so</code> / <code>.dylib</code>, ~1.7 MB) — C FFI for C#, Java, etc.</li>
+        </ul>
+    </section>
+
+    <!-- Platforms -->
+    <section>
+        <h2>Platforms</h2>
+        <table>
+            <tr><th>Platform</th><th>CLI binary</th><th>Shared library</th></tr>
+            <tr><td>Linux x64</td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-linux-x64">bright-sdk-downloader-linux-x64</a></td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/libbright_sdk_download.so">libbright_sdk_download.so</a></td></tr>
+            <tr><td>macOS x64</td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-macos-x64">bright-sdk-downloader-macos-x64</a></td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/libbright_sdk_download.dylib">libbright_sdk_download.dylib</a></td></tr>
+            <tr><td>macOS ARM64</td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-macos-arm64">bright-sdk-downloader-macos-arm64</a></td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/libbright_sdk_download.dylib">libbright_sdk_download.dylib</a></td></tr>
+            <tr><td>Windows x64</td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright-sdk-downloader-win-x64.exe">bright-sdk-downloader-win-x64.exe</a></td><td><a href="https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest/download/bright_sdk_download.dll">bright_sdk_download.dll</a></td></tr>
+        </table>
+    </section>
+
+    <!-- API Key -->
+    <section>
+        <h2>API Key</h2>
+        <p>All commands require an <code>SDK_API_KEY</code> environment variable. Get yours from the <a href="https://bright-sdk.com/cp/dashboard">BrightSDK Dashboard</a> → Settings → API Key.</p>
+    </section>
+
+    <!-- CLI Usage -->
+    <section>
+        <h2>CLI Usage</h2>
+<pre><code>export SDK_API_KEY=&lt;your-api-key&gt;
+
+# Resolve latest version + download URL
+bright-sdk-downloader resolve -p android
+
+# Download and extract SDK archive
+bright-sdk-downloader fetch -p tizen -o ./libs
+
+# List all available platforms
+bright-sdk-downloader platforms</code></pre>
+
+        <h3>Commands</h3>
+        <table>
+            <tr><th>Command</th><th>Description</th><th>Output</th></tr>
+            <tr><td><code>resolve</code></td><td>Resolve version + download URL</td><td><code>{platform, version, url}</code></td></tr>
+            <tr><td><code>fetch</code></td><td>Download and extract archive</td><td><code>{platform, version, url, output}</code></td></tr>
+            <tr><td><code>platforms</code></td><td>List available platform keys</td><td><code>[{key, last_version}]</code></td></tr>
+        </table>
+    </section>
+
+    <!-- FFI -->
+    <section>
+        <h2>Shared Library (FFI)</h2>
+        <p>The library exposes a C ABI for use from any language:</p>
+<pre><code>// Returns JSON string (caller must free with sdk_free_string), or NULL on error
+char* sdk_resolve(const char* platform, const char* version);
+char* sdk_fetch(const char* platform, const char* version, const char* output_dir);
+char* sdk_list_platforms(void);
+
+// Error handling
+char* sdk_last_error(void);
+
+// Memory management
+void sdk_free_string(char* ptr);</code></pre>
+
+        <h3>C# / Unity</h3>
+<pre><code>[DllImport("bright_sdk_download", CallingConvention = CallingConvention.Cdecl)]
+static extern IntPtr sdk_fetch(string platform, string version, string outputDir);
+
+[DllImport("bright_sdk_download", CallingConvention = CallingConvention.Cdecl)]
+static extern void sdk_free_string(IntPtr ptr);</code></pre>
+
+        <h3>Java (JNA)</h3>
+<pre><code>public interface BrightSdkDownload extends Library {
+    BrightSdkDownload INSTANCE = Native.load("bright_sdk_download", BrightSdkDownload.class);
+    String sdk_resolve(String platform, String version);
+    String sdk_fetch(String platform, String version, String outputDir);
+    void sdk_free_string(Pointer ptr);
+}</code></pre>
+    </section>
+
+    <!-- Build -->
+    <section>
+        <h2>Building from source</h2>
+<pre><code># Prerequisites: Rust toolchain (https://rustup.rs)
+cargo build --release
+
+# Run tests
+cargo test
+
+# Build for all platforms (requires Docker for cross-compilation)
+./build-all.sh</code></pre>
+    </section>
+</div>
+
+<footer>
+    MIT License &middot; <a href="https://github.com/BrightSDK">BrightSDK</a> &middot; <a href="https://bright-sdk.com">bright-sdk.com</a>
+</footer>
+
+</body>
+</html>
