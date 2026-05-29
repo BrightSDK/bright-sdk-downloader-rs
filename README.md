@@ -4,7 +4,8 @@
 
 [![Lint](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/lint.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/lint.yml)
 [![Test](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml)
-[![Build](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/release.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/release.yml)
+[![E2E](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml)
+[![Release](https://img.shields.io/github/v/release/BrightSDK/bright-sdk-downloader-rs)](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest)
 
 ## Demo
 
