@@ -39,7 +39,18 @@ Download all from [Releases](https://github.com/BrightSDK/bright-sdk-downloader-
 
 ## API Key
 
-All commands require an `SDK_API_KEY` environment variable. Get yours from the [BrightSDK Dashboard](https://bright-sdk.com/cp/dashboard) → Settings → API Key.
+All commands require an `SDK_API_KEY` environment variable.
+
+1. Open [BrightSDK API Keys](https://bright-sdk.com/cp/settings/company_profile#api_keys) (links directly to the section)
+2. Click **+ Add**, set an expiration, give it a name, click **Generate key**
+3. Copy the key immediately (it is shown only once)
+4. Export it in your shell:
+
+```bash
+export SDK_API_KEY=<your-api-key>
+```
+
+See the full [step-by-step guide with screenshots](https://brightsdk.github.io/bright-sdk-downloader-rs/obtain-api-key.html).
 
 ## CLI Usage
 

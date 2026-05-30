@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obtaining a BrightSDK API Key</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0B0F1A;
+            --bg2: #111827;
+            --fg: #E2E8F0;
+            --fg-muted: #94A3B8;
+            --accent: #3ECF8E;
+            --accent-hover: #2BB77A;
+            --border: #1E293B;
+            --card-bg: #1A2332;
+            --code-bg: #0F172A;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            padding: 2rem 1.5rem;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .lead {
+            color: var(--fg-muted);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        /* Zigzag timeline */
+        .timeline {
+            position: relative;
+            padding: 1rem 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: var(--border);
+            transform: translateX(-50%);
+        }
+        .step {
+            position: relative;
+            width: 47%;
+            padding: 1.2rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+        }
+        .step:nth-child(odd) {
+            margin-left: 0;
+            margin-right: auto;
+        }
+        .step:nth-child(even) {
+            margin-left: auto;
+            margin-right: 0;
+        }
+        /* Connector dots on the center line */
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 2rem;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            border: 2px solid var(--bg);
+        }
+        .step:nth-child(odd)::after {
+            right: -6.5%;
+            transform: translateX(50%);
+        }
+        .step:nth-child(even)::after {
+            left: -6.5%;
+            transform: translateX(-50%);
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            color: #0B0F1A;
+            font-weight: 700;
+            font-size: 0.8rem;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .step h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .step p {
+            margin: 0.5rem 0;
+            color: var(--fg);
+            font-size: 0.92rem;
+        }
+        .step img {
+            max-height: 100px;
+            width: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            margin: 0.5rem 0 0;
+            cursor: zoom-in;
+            transition: max-height 0.3s ease;
+        }
+        .step img.expanded {
+            max-height: none;
+            max-width: 100%;
+        }
+        .step img.img-sm.expanded {
+            max-width: 360px;
+        }
+        .img-hint {
+            font-size: 0.7rem;
+            color: var(--fg-muted);
+            margin-top: 0.3rem;
+            cursor: pointer;
+        }
+
+        /* Lightbox overlay */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+            padding: 2rem;
+        }
+        .lightbox.active { display: flex; }
+        .lightbox img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        code {
+            background: var(--code-bg);
+            padding: 0.15em 0.45em;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+            border: 1px solid var(--border);
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 0.8rem 0;
+            position: relative;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+        .callout {
+            background: rgba(62, 207, 142, 0.06);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            margin: 0.75rem 0 0;
+            font-size: 0.85rem;
+        }
+        .callout strong { color: #fff; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        strong { color: #fff; }
+        em { color: var(--fg-muted); }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            color: var(--fg-muted);
+        }
+        .back-link:hover { color: var(--accent); }
+
+        /* Copy button */
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--border);
+            border: 1px solid #334155;
+            color: var(--fg-muted);
+            border-radius: 6px;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        pre:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { background: #334155; color: #fff; }
+        .copy-btn.copied { background: var(--accent); color: #0B0F1A; border-color: var(--accent); }
+
+        /* Responsive: stack on mobile */
+        @media (max-width: 700px) {
+            .timeline::before { left: 1.5rem; }
+            .step { width: 100%; margin-left: 3rem !important; margin-right: 0 !important; }
+            .step::after { left: -2rem !important; right: auto !important; transform: none !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a class="back-link" id="back-link" href="./">&larr; Back to docs</a>
+
+    <img src="https://media.bright-sdk.com/2025/12/brightsdk_logo_light.svg" alt="BrightSDK" style="height:40px;display:block;margin:0 auto 1rem">
+    <h1>Obtaining a BrightSDK API Key</h1>
+    <p class="lead">The BrightSDK tools authenticate with the releases API using an API key. Follow these steps to create one.</p>
+
+    <div class="timeline">
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <h2>Open API Keys</h2>
+            </div>
+            <p>Log in to the <a href="https://bright-sdk.com/cp/settings/company_profile#api_keys">BrightSDK Control Panel</a> — this links directly to the <strong>API keys</strong> section.</p>
+            <img src="https://raw.githubusercontent.com/BrightSDK/bright-sdk-integration/main/docs/img/auth_step2_api_keys.png" alt="API keys section">
+        </div>
+
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <h2>Create a new key</h2>
+            </div>
+            <p>Click <strong>+ Add</strong>. Choose an expiration (e.g. <em>One year</em>), give the key a descriptive name, then click <strong>Generate key</strong>.</p>
+            <img src="https://raw.githubusercontent.com/BrightSDK/bright-sdk-integration/main/docs/img/auth_step3_key_creation.png" alt="Key creation dialog">
+        </div>
+
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <h2>Copy your key</h2>
+            </div>
+            <p>The generated key is shown <strong>once only</strong> — copy it immediately.</p>
+            <img class="img-sm" src="https://raw.githubusercontent.com/BrightSDK/bright-sdk-integration/main/docs/img/auth_step4_key_revealed.png" alt="New API key revealed">
+            <div class="callout">
+                <strong>Important:</strong> Once you close this dialog the key cannot be retrieved. If lost, delete and create a new one.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <h2>Set the environment variable</h2>
+            </div>
+            <p>Export the key in your shell:</p>
+<pre><code>export SDK_API_KEY=&lt;your-api-key&gt;</code></pre>
+            <p>To persist across sessions:</p>
+<pre><code>echo 'export SDK_API_KEY=&lt;your-api-key&gt;' >> ~/.zshrc</code></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('pre').forEach(function(pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function() {
+        var code = pre.querySelector('code');
+        var text = (code || pre).textContent;
+        navigator.clipboard.writeText(text).then(function() {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(function() {
+                btn.textContent = 'Copy';
+                btn.classList.remove('copied');
+            }, 2000);
+        });
+    });
+    pre.appendChild(btn);
+});
+// Use referrer or ?from= param for the back link
+(function() {
+    var link = document.getElementById('back-link');
+    var params = new URLSearchParams(location.search);
+    var from = params.get('from');
+    if (from) {
+        link.href = from;
+    } else if (document.referrer) {
+        var ref = new URL(document.referrer);
+        var cur = new URL(location.href);
+        // Use referrer if it's a different page (not self or sibling index)
+        if (ref.pathname !== cur.pathname) {
+            link.href = document.referrer;
+        }
+    }
+})();
+// Click-to-expand images in overlay
+var lightbox = document.createElement('div');
+lightbox.className = 'lightbox';
+var lbImg = document.createElement('img');
+lightbox.appendChild(lbImg);
+document.body.appendChild(lightbox);
+lightbox.addEventListener('click', function() {
+    lightbox.classList.remove('active');
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') lightbox.classList.remove('active');
+});
+document.querySelectorAll('.step img').forEach(function(img) {
+    img.addEventListener('click', function() {
+        lbImg.src = img.src;
+        lbImg.alt = img.alt;
+        lightbox.classList.add('active');
+    });
+});
+</script>
+</body>
+</html>
