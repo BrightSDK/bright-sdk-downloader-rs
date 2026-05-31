@@ -286,10 +286,18 @@
                 <span class="step-number">4</span>
                 <h2>Set the environment variable</h2>
             </div>
-            <p>Export the key in your shell:</p>
+            <p><strong>macOS / Linux</strong> — export in your shell:</p>
 <pre><code>export SDK_API_KEY=&lt;your-api-key&gt;</code></pre>
             <p>To persist across sessions:</p>
 <pre><code>echo 'export SDK_API_KEY=&lt;your-api-key&gt;' >> ~/.zshrc</code></pre>
+            <p><strong>Windows (PowerShell)</strong> — set for the current session:</p>
+<pre><code>$env:SDK_API_KEY = "&lt;your-api-key&gt;"</code></pre>
+            <p>To persist for your user (survives reboots):</p>
+<pre><code>[Environment]::SetEnvironmentVariable("SDK_API_KEY", "&lt;your-api-key&gt;", "User")</code></pre>
+            <p><strong>Windows (CMD)</strong> — set for the current session:</p>
+<pre><code>set SDK_API_KEY=&lt;your-api-key&gt;</code></pre>
+            <p>To persist for your user (survives reboots):</p>
+<pre><code>setx SDK_API_KEY "&lt;your-api-key&gt;"</code></pre>
         </div>
     </div>
 </div>
