@@ -69,6 +69,13 @@ jobs:
           fi
           cp "$src/${{ matrix.lib_name }}" "dist/${{ matrix.lib_name }}"
 
+      - name: Generate SHA-256 checksums
+        run: |
+          cd dist
+          for f in *; do
+            shasum -a 256 "$f" > "$f.sha256"
+          done
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
