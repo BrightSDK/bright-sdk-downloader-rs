@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.0.2] - 2026-06-01
+
+### Fixed
+
+- Usage text now shows the actual executable name at runtime (e.g. `bright-sdk-downloader.exe` on Windows)
+- `--version` flag handled in `main` alongside other commands
+
 ## [1.0.1] - 2026-06-01
 
 ### Added
@@ -28,12 +37,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unix permission preservation during extraction
 - Cross-platform builds: Linux x64, macOS x64/ARM64, Windows x64
 - GitHub Actions CI: lint, test, build & release workflows
-
-## [Unreleased]
-
-## [1.0.2] - 2026-06-01
-
-### Fixed
-
-- Usage text now shows the actual executable name at runtime (e.g. `bright-sdk-downloader.exe` on Windows)
-- `--version` flag handled in `main` alongside other commands

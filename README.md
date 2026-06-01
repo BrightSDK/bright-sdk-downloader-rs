@@ -65,21 +65,24 @@ See the full [step-by-step guide with screenshots](https://brightsdk.github.io/b
 
 ## CLI Usage
 
-**macOS / Linux:**
+**macOS ARM64 (Apple Silicon):**
 ```bash
 export SDK_API_KEY=<your-api-key>
 
-# Check CLI version
-bright-sdk-downloader --version
+./bright-sdk-downloader --version
+./bright-sdk-downloader resolve -p android --pretty
+./bright-sdk-downloader fetch -p tizen -o ./libs
+./bright-sdk-downloader platforms --pretty
+```
 
-# Resolve latest version + download URL
-bright-sdk-downloader resolve -p android --pretty
+**macOS x64 / Linux x64:**
+```bash
+export SDK_API_KEY=<your-api-key>
 
-# Download and extract SDK archive
-bright-sdk-downloader fetch -p tizen -o ./libs
-
-# List all available platforms
-bright-sdk-downloader platforms --pretty
+./bright-sdk-downloader --version
+./bright-sdk-downloader resolve -p android --pretty
+./bright-sdk-downloader fetch -p tizen -o ./libs
+./bright-sdk-downloader platforms --pretty
 ```
 
 **Windows (PowerShell):**
