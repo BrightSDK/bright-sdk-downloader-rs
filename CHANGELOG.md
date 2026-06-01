@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - 2026-06-01
+
+### Added
+
+- `--pretty` flag for `resolve` and `platforms` commands (formatted JSON output)
+- `--version` flag to print CLI version
+- Docs site: per-platform install blocks with individual copy buttons
+- Docs site: API Key section reordered before Install section
+- Docs site: Download CTA scrolls to Platforms table; GitHub button restored
+- Windows usage examples now use `.\bright-sdk-downloader.exe` with `.exe` suffix
+
+## [1.0.0] - 2026-05-01
 
 ### Added
 
@@ -17,3 +28,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unix permission preservation during extraction
 - Cross-platform builds: Linux x64, macOS x64/ARM64, Windows x64
 - GitHub Actions CI: lint, test, build & release workflows
+
+## [Unreleased]
