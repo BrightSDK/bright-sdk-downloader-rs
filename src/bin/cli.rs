@@ -6,14 +6,23 @@ use std::time::Instant;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    let exe = std::path::Path::new(&args[0])
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("bright-sdk-downloader")
+        .to_string();
     let cmd = args.get(1).map(|s| s.as_str()).unwrap_or("");
 
     let result = match cmd {
-        "resolve" => cmd_resolve(&args[2..]),
-        "fetch" => cmd_fetch(&args[2..]),
+        "resolve" => cmd_resolve(&args[2..], &exe),
+        "fetch" => cmd_fetch(&args[2..], &exe),
         "platforms" => cmd_platforms(),
+        "--version" | "-V" => {
+            println!("{}", env!("CARGO_PKG_VERSION"));
+            return;
+        }
         _ => {
-            print_usage();
+            print_usage(&exe);
             process::exit(if cmd.is_empty() { 0 } else { 1 });
         }
     };
@@ -24,10 +33,10 @@ fn main() {
     }
 }
 
-fn cmd_resolve(args: &[String]) -> Result<(), bright_sdk_download::Error> {
+fn cmd_resolve(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Error> {
     let (platform, version, _) = parse_args(args);
     let platform = platform.unwrap_or_else(|| {
-        eprintln!("Usage: bright-sdk-downloader resolve -p <platform> [-v <version>]");
+        eprintln!("Usage: {exe} resolve -p <platform> [-v <version>]");
         process::exit(1);
     });
     let result = resolve_sdk(&platform, &version)?;
@@ -35,10 +44,10 @@ fn cmd_resolve(args: &[String]) -> Result<(), bright_sdk_download::Error> {
     Ok(())
 }
 
-fn cmd_fetch(args: &[String]) -> Result<(), bright_sdk_download::Error> {
+fn cmd_fetch(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Error> {
     let (platform, version, output) = parse_args(args);
     let platform = platform.unwrap_or_else(|| {
-        eprintln!("Usage: bright-sdk-downloader fetch -p <platform> [-v <version>] [-o <dir>]");
+        eprintln!("Usage: {exe} fetch -p <platform> [-v <version>] [-o <dir>]");
         process::exit(1);
     });
 
@@ -138,9 +147,9 @@ fn parse_args(args: &[String]) -> (Option<String>, String, String) {
     (platform, version, output)
 }
 
-fn print_usage() {
+fn print_usage(exe: &str) {
     eprintln!(
-        "bright-sdk-downloader — BrightSDK download CLI (Rust)\n\n\
+        "{exe} — BrightSDK download CLI (Rust)\n\n\
          Commands:\n\
          \x20 resolve    Resolve version + download URL (JSON)\n\
          \x20 fetch      Download and extract SDK archive\n\
@@ -152,8 +161,8 @@ fn print_usage() {
          Environment:\n\
          \x20 SDK_API_KEY      Required. BrightSDK API key.\n\n\
          Examples:\n\
-         \x20 bright-sdk-downloader resolve -p android\n\
-         \x20 bright-sdk-downloader fetch -p ios -o ./libs\n\
-         \x20 bright-sdk-downloader platforms"
+         \x20 {exe} resolve -p android\n\
+         \x20 {exe} fetch -p ios -o ./libs\n\
+         \x20 {exe} platforms"
     );
 }

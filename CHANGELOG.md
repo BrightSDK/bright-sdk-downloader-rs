@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs site: Download CTA scrolls to Platforms table; GitHub button restored
 - Windows usage examples now use `.\bright-sdk-downloader.exe` with `.exe` suffix
 
-## [1.0.0] - 2026-05-01
+## [1.0.0] - 2026-05-30
 
 ### Added
 
@@ -30,3 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI: lint, test, build & release workflows
 
 ## [Unreleased]
+
+## [1.0.2] - 2026-06-01
+
+### Fixed
+
+- Usage text now shows the actual executable name at runtime (e.g. `bright-sdk-downloader.exe` on Windows)
+- `--version` flag handled in `main` alongside other commands
