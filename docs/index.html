@@ -469,20 +469,24 @@ chmod +x bright-sdk-downloader</code></pre>
         <h3>macOS / Linux</h3>
 <pre><code>export SDK_API_KEY=&lt;your-api-key&gt;
 
+# Check CLI version
+bright-sdk-downloader --version
+
 # Resolve latest version + download URL
-bright-sdk-downloader resolve -p android
+bright-sdk-downloader resolve -p android --pretty
 
 # Download and extract SDK archive
 bright-sdk-downloader fetch -p tizen -o ./libs
 
 # List all available platforms
-bright-sdk-downloader platforms</code></pre>
+bright-sdk-downloader platforms --pretty</code></pre>
         <h3>Windows (PowerShell)</h3>
 <pre><code>$env:SDK_API_KEY = "&lt;your-api-key&gt;"
 
-.\bright-sdk-downloader.exe resolve -p android
+.\bright-sdk-downloader.exe --version
+.\bright-sdk-downloader.exe resolve -p android --pretty
 .\bright-sdk-downloader.exe fetch -p tizen -o ./libs
-.\bright-sdk-downloader.exe platforms</code></pre>
+.\bright-sdk-downloader.exe platforms --pretty</code></pre>
 
         <h3>Commands</h3>
         <table>

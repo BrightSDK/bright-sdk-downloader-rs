@@ -69,23 +69,27 @@ See the full [step-by-step guide with screenshots](https://brightsdk.github.io/b
 ```bash
 export SDK_API_KEY=<your-api-key>
 
+# Check CLI version
+bright-sdk-downloader --version
+
 # Resolve latest version + download URL
-bright-sdk-downloader resolve -p android
+bright-sdk-downloader resolve -p android --pretty
 
 # Download and extract SDK archive
 bright-sdk-downloader fetch -p tizen -o ./libs
 
 # List all available platforms
-bright-sdk-downloader platforms
+bright-sdk-downloader platforms --pretty
 ```
 
 **Windows (PowerShell):**
 ```powershell
 $env:SDK_API_KEY = "<your-api-key>"
 
-bright-sdk-downloader resolve -p android
-bright-sdk-downloader fetch -p tizen -o ./libs
-bright-sdk-downloader platforms
+.\bright-sdk-downloader.exe --version
+.\bright-sdk-downloader.exe resolve -p android --pretty
+.\bright-sdk-downloader.exe fetch -p tizen -o ./libs
+.\bright-sdk-downloader.exe platforms --pretty
 ```
 
 ### Commands
