@@ -1,6 +1,6 @@
 [package]
 name = "bright_sdk_downloader"
-version = "0.1.1"
+version = "1.0.1"
 edition = "2021"
 description = "BrightSDK download library + CLI — resolve versions, fetch and extract SDK archives"
 license = "MIT"
