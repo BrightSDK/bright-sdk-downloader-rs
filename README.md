@@ -44,16 +44,28 @@ All commands require an `SDK_API_KEY` environment variable.
 1. Open [BrightSDK API Keys](https://bright-sdk.com/cp/settings/company_profile#api_keys) (links directly to the section)
 2. Click **+ Add**, set an expiration, give it a name, click **Generate key**
 3. Copy the key immediately (it is shown only once)
-4. Export it in your shell:
+4. Set the environment variable:
 
+**macOS / Linux:**
 ```bash
 export SDK_API_KEY=<your-api-key>
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:SDK_API_KEY = "<your-api-key>"
+```
+
+**Windows (CMD):**
+```cmd
+set SDK_API_KEY=<your-api-key>
 ```
 
 See the full [step-by-step guide with screenshots](https://brightsdk.github.io/bright-sdk-downloader-rs/obtain-api-key.html).
 
 ## CLI Usage
 
+**macOS / Linux:**
 ```bash
 export SDK_API_KEY=<your-api-key>
 
@@ -64,6 +76,15 @@ bright-sdk-downloader resolve -p android
 bright-sdk-downloader fetch -p tizen -o ./libs
 
 # List all available platforms
+bright-sdk-downloader platforms
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:SDK_API_KEY = "<your-api-key>"
+
+bright-sdk-downloader resolve -p android
+bright-sdk-downloader fetch -p tizen -o ./libs
 bright-sdk-downloader platforms
 ```
 
