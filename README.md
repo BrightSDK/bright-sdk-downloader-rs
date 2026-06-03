@@ -6,6 +6,7 @@
 [![Test](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/test.yml)
 [![E2E](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml/badge.svg)](https://github.com/BrightSDK/bright-sdk-downloader-rs/actions/workflows/e2e.yml)
 [![Release](https://img.shields.io/github/v/release/BrightSDK/bright-sdk-downloader-rs)](https://github.com/BrightSDK/bright-sdk-downloader-rs/releases/latest)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://brightsdk.github.io/bright-sdk-downloader-rs/)
 
 ## Demo
 
