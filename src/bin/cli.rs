@@ -1,4 +1,4 @@
-use bright_sdk_download::{fetch_sdk_with_progress, list_platforms, resolve_sdk, Step};
+use bright_sdk_download::{fetch_sdk_with_progress, list_platforms, resolve_sdk_with_hash, Step};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::env;
 use std::process;
@@ -34,20 +34,20 @@ fn main() {
 }
 
 fn cmd_resolve(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Error> {
-    let (platform, version, _) = parse_args(args);
+    let (platform, version, _, hash) = parse_args(args);
     let platform = platform.unwrap_or_else(|| {
-        eprintln!("Usage: {exe} resolve -p <platform> [-v <version>]");
+        eprintln!("Usage: {exe} resolve -p <platform> [-v <version>] [--hash <hash>]");
         process::exit(1);
     });
-    let result = resolve_sdk(&platform, &version)?;
+    let result = resolve_sdk_with_hash(&platform, &version, hash.as_deref())?;
     println!("{}", serde_json::to_string(&result).unwrap());
     Ok(())
 }
 
 fn cmd_fetch(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Error> {
-    let (platform, version, output) = parse_args(args);
+    let (platform, version, output, hash) = parse_args(args);
     let platform = platform.unwrap_or_else(|| {
-        eprintln!("Usage: {exe} fetch -p <platform> [-v <version>] [-o <dir>]");
+        eprintln!("Usage: {exe} fetch -p <platform> [-v <version>] [-o <dir>] [--hash <hash>]");
         process::exit(1);
     });
 
@@ -70,6 +70,7 @@ fn cmd_fetch(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Erro
         &platform,
         &version,
         &output,
+        hash.as_deref(),
         Some(Box::new(move |step, done, total| {
             if step != current_step {
                 let elapsed = step_start.elapsed().as_secs_f64();
@@ -112,10 +113,11 @@ fn cmd_platforms() -> Result<(), bright_sdk_download::Error> {
     Ok(())
 }
 
-fn parse_args(args: &[String]) -> (Option<String>, String, String) {
+fn parse_args(args: &[String]) -> (Option<String>, String, String, Option<String>) {
     let mut platform = None;
     let mut version = "latest".to_string();
     let mut output = ".".to_string();
+    let mut hash = None;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -137,6 +139,12 @@ fn parse_args(args: &[String]) -> (Option<String>, String, String) {
                     output = args[i].clone();
                 }
             }
+            "--hash" | "-h" => {
+                i += 1;
+                if i < args.len() {
+                    hash = Some(args[i].clone());
+                }
+            }
             other if !other.starts_with('-') && platform.is_none() => {
                 platform = Some(other.to_string());
             }
@@ -144,7 +152,7 @@ fn parse_args(args: &[String]) -> (Option<String>, String, String) {
         }
         i += 1;
     }
-    (platform, version, output)
+    (platform, version, output, hash)
 }
 
 fn print_usage(exe: &str) {

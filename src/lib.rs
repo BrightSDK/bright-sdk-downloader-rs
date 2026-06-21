@@ -32,6 +32,8 @@ pub struct PlatformConfig {
     pub last_version: Option<String>,
     pub url: Option<String>,
     pub url_tpl: Option<String>,
+    pub cert_url_tpl: Option<String>,
+    pub ver_hash: Option<String>,
     pub sha256: Option<String>,
 }
 
@@ -47,6 +49,8 @@ pub struct ResolveResult {
     pub platform: String,
     pub version: String,
     pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fallback_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
 }
@@ -69,11 +73,13 @@ pub struct PlatformInfo {
 pub enum Error {
     MissingApiKey,
     Http(String),
+    NotFound(String),
     Json(String),
     Io(io::Error),
     UnknownPlatform(String),
     NoVersion(String),
     NoUrl(String),
+    NoCertHash(String),
     Extract(String),
 }
 
@@ -82,11 +88,16 @@ impl std::fmt::Display for Error {
         match self {
             Error::MissingApiKey => write!(f, "SDK_API_KEY environment variable is required"),
             Error::Http(e) => write!(f, "HTTP error: {e}"),
+            Error::NotFound(url) => write!(f, "Not found (404): {url}"),
             Error::Json(e) => write!(f, "JSON parse error: {e}"),
             Error::Io(e) => write!(f, "IO error: {e}"),
             Error::UnknownPlatform(p) => write!(f, "Unknown platform '{p}'"),
             Error::NoVersion(p) => write!(f, "No latest version for platform '{p}'"),
             Error::NoUrl(p) => write!(f, "Cannot resolve download URL for '{p}'"),
+            Error::NoCertHash(v) => write!(f,
+                "Certified build hash not available for version '{v}'. \
+                 Only the latest version is served as certified. \
+                 For older versions, provide --hash or contact BrightSDK support."),
             Error::Extract(e) => write!(f, "Extraction error: {e}"),
         }
     }
@@ -138,6 +149,14 @@ pub fn fetch_releases() -> Result<ReleasesConfig, Error> {
 }
 
 pub fn resolve_sdk(platform_key: &str, version: &str) -> Result<ResolveResult, Error> {
+    resolve_sdk_with_hash(platform_key, version, None)
+}
+
+pub fn resolve_sdk_with_hash(
+    platform_key: &str,
+    version: &str,
+    hash_override: Option<&str>,
+) -> Result<ResolveResult, Error> {
     let releases = fetch_releases()?;
     let platform_data = releases.platforms.get(platform_key).ok_or_else(|| {
         let available: Vec<&str> = releases.platforms.keys().map(|s| s.as_str()).collect();
@@ -160,20 +179,42 @@ pub fn resolve_sdk(platform_key: &str, version: &str) -> Result<ResolveResult, E
     let url = if let Some(ref u) = platform_data.url {
         u.clone()
     } else {
-        resolve_url_tpl(&releases, platform_key, &ver)
-            .ok_or_else(|| Error::NoUrl(platform_key.to_string()))?
+        // Try cert_url_tpl first (with hash from override or response)
+        let cert_hash = hash_override
+            .map(|s| s.to_string())
+            .or_else(|| platform_data.ver_hash.clone());
+        let cert_url = platform_data.cert_url_tpl.as_ref().and_then(|_| {
+            cert_hash.as_ref().map(|h| {
+                resolve_tpl_with_hash(&releases, platform_key, &ver, Some(h), true)
+            })
+        }).flatten();
+        if let Some(u) = cert_url {
+            u
+        } else {
+            resolve_tpl_with_hash(&releases, platform_key, &ver, None, false)
+                .ok_or_else(|| Error::NoUrl(platform_key.to_string()))?
+        }
+    };
+
+    // If primary URL is cert, provide url_tpl as fallback
+    let fallback_url = if platform_data.cert_url_tpl.is_some() && platform_data.url.is_none() {
+        resolve_tpl_with_hash(&releases, platform_key, &ver, None, false)
+            .filter(|f| f != &url)
+    } else {
+        None
     };
 
     Ok(ResolveResult {
         platform: platform_key.to_string(),
         version: ver,
         url,
+        fallback_url,
         sha256: platform_data.sha256.clone(),
     })
 }
 
 pub fn fetch_sdk(platform_key: &str, version: &str, output: &str) -> Result<FetchResult, Error> {
-    fetch_sdk_with_progress(platform_key, version, output, None)
+    fetch_sdk_with_progress(platform_key, version, output, None, None)
 }
 
 /// Download + extract with optional progress callback.
@@ -181,12 +222,13 @@ pub fn fetch_sdk_with_progress(
     platform_key: &str,
     version: &str,
     output: &str,
+    hash_override: Option<&str>,
     mut on_progress: Option<ProgressFn>,
 ) -> Result<FetchResult, Error> {
     if let Some(ref mut cb) = on_progress {
         cb(Step::Resolve, 0, 0);
     }
-    let resolved = resolve_sdk(platform_key, version)?;
+    let resolved = resolve_sdk_with_hash(platform_key, version, hash_override)?;
     if let Some(ref mut cb) = on_progress {
         cb(Step::Resolve, 1, 1);
     }
@@ -216,11 +258,27 @@ pub fn fetch_sdk_with_progress(
     }
     // Take on_progress out so the download closure can own it temporarily
     let mut dl_cb = on_progress.take();
-    download_to_file(&resolved.url, &archive_path, &mut |done, total| {
+    let mut actual_url = resolved.url.clone();
+    let dl_result = download_to_file(&actual_url, &archive_path, &mut |done, total| {
         if let Some(ref mut cb) = dl_cb {
             cb(Step::Download, done, total);
         }
-    })?;
+    });
+    // On 404, try fallback URL if available
+    if matches!(&dl_result, Err(Error::NotFound(_))) {
+        if let Some(ref fallback) = resolved.fallback_url {
+            actual_url = fallback.clone();
+            download_to_file(&actual_url, &archive_path, &mut |done, total| {
+                if let Some(ref mut cb) = dl_cb {
+                    cb(Step::Download, done, total);
+                }
+            })?;
+        } else {
+            dl_result?;
+        }
+    } else {
+        dl_result?;
+    }
     on_progress = dl_cb; // restore after download
 
     if let Some(ref expected_sha) = resolved.sha256 {
@@ -251,7 +309,7 @@ pub fn fetch_sdk_with_progress(
     Ok(FetchResult {
         platform: resolved.platform,
         version: resolved.version,
-        url: resolved.url,
+        url: actual_url,
         output: out_dir.to_string_lossy().to_string(),
     })
 }
@@ -272,10 +330,25 @@ pub fn list_platforms() -> Result<Vec<PlatformInfo>, Error> {
 
 // --- Internal helpers ---
 
+#[cfg(test)]
 fn resolve_url_tpl(releases: &ReleasesConfig, platform_key: &str, ver: &str) -> Option<String> {
+    resolve_tpl_with_hash(releases, platform_key, ver, None, false)
+}
+
+fn resolve_tpl_with_hash(
+    releases: &ReleasesConfig,
+    platform_key: &str,
+    ver: &str,
+    hash: Option<&str>,
+    use_cert: bool,
+) -> Option<String> {
     let platform = releases.platforms.get(platform_key)?;
-    let url_tpl = platform.url_tpl.as_ref()?;
-    let mut url = url_tpl.clone();
+    let tpl = if use_cert {
+        platform.cert_url_tpl.as_ref()?
+    } else {
+        platform.url_tpl.as_ref()?
+    };
+    let mut url = tpl.clone();
 
     let base = releases.templates.get("base").cloned().unwrap_or_default();
     for (key, val) in &releases.templates {
@@ -288,6 +361,11 @@ fn resolve_url_tpl(releases: &ReleasesConfig, platform_key: &str, ver: &str) -> 
     url = url.replace("{{base}}", &base);
     url = url.replace("{{platform}}", platform_key);
     url = url.replace("{{version}}", ver);
+    if let Some(h) = hash {
+        url = url.replace("{{ver_hash}}", h);
+    } else if let Some(ref vh) = platform.ver_hash {
+        url = url.replace("{{ver_hash}}", vh);
+    }
     Some(url)
 }
 
@@ -316,7 +394,10 @@ fn download_to_file(
         .set("User-Agent", "bright-sdk-download-rs/0.1")
         .timeout(std::time::Duration::from_secs(120))
         .call()
-        .map_err(|e| Error::Http(e.to_string()))?;
+        .map_err(|e| match &e {
+            ureq::Error::Status(404, _) => Error::NotFound(url.to_string()),
+            _ => Error::Http(e.to_string()),
+        })?;
 
     let total: u64 = resp
         .header("content-length")
@@ -465,6 +546,8 @@ mod tests {
                 last_version: Some("1.623.17".to_string()),
                 url: None,
                 url_tpl: Some("{{base}}/{{platform}}/{{version}}/sdk.zip".to_string()),
+                cert_url_tpl: None,
+                ver_hash: None,
                 sha256: None,
             },
         );
@@ -491,6 +574,8 @@ mod tests {
                 last_version: Some("2.0.0".to_string()),
                 url: None,
                 url_tpl: Some("{{base}}/{{region}}/{{platform}}-{{version}}.zip".to_string()),
+                cert_url_tpl: None,
+                ver_hash: None,
                 sha256: None,
             },
         );
@@ -527,6 +612,8 @@ mod tests {
                 last_version: Some("1.0.0".to_string()),
                 url: None,
                 url_tpl: None,
+                cert_url_tpl: None,
+                ver_hash: None,
                 sha256: None,
             },
         );
@@ -572,5 +659,102 @@ mod tests {
     #[test]
     fn ffi_free_null_is_safe() {
         sdk_free_string(std::ptr::null_mut()); // should not crash
+    }
+
+    #[test]
+    fn resolve_cert_url_tpl_with_ver_hash() {
+        let mut platforms = HashMap::new();
+        platforms.insert(
+            "win".to_string(),
+            PlatformConfig {
+                last_version: Some("1.617.770".to_string()),
+                url: None,
+                url_tpl: Some("{{base}}/bright_sdk_{{platform}}-{{version}}.zip".to_string()),
+                cert_url_tpl: Some(
+                    "{{base}}/bright_sdk_{{platform}}-{{version}}-cert-{{ver_hash}}.zip"
+                        .to_string(),
+                ),
+                ver_hash: Some("3948271605".to_string()),
+                sha256: None,
+            },
+        );
+        let mut templates = HashMap::new();
+        templates.insert("base".to_string(), "https://cdn.example.com".to_string());
+        let releases = ReleasesConfig { platforms, templates };
+
+        // cert_url_tpl should resolve with ver_hash
+        let url = resolve_tpl_with_hash(
+            &releases, "win", "1.617.770", Some("3948271605"), true,
+        );
+        assert_eq!(
+            url,
+            Some("https://cdn.example.com/bright_sdk_win-1.617.770-cert-3948271605.zip".to_string())
+        );
+    }
+
+    #[test]
+    fn resolve_cert_url_tpl_with_hash_override() {
+        let mut platforms = HashMap::new();
+        platforms.insert(
+            "win".to_string(),
+            PlatformConfig {
+                last_version: Some("1.617.770".to_string()),
+                url: None,
+                url_tpl: Some("{{base}}/bright_sdk_{{platform}}-{{version}}.zip".to_string()),
+                cert_url_tpl: Some(
+                    "{{base}}/bright_sdk_{{platform}}-{{version}}-cert-{{ver_hash}}.zip"
+                        .to_string(),
+                ),
+                ver_hash: Some("server_hash".to_string()),
+                sha256: None,
+            },
+        );
+        let mut templates = HashMap::new();
+        templates.insert("base".to_string(), "https://cdn.example.com".to_string());
+        let releases = ReleasesConfig { platforms, templates };
+
+        // hash override takes precedence over ver_hash from response
+        let url = resolve_tpl_with_hash(
+            &releases, "win", "1.600.100", Some("override_hash"), true,
+        );
+        assert_eq!(
+            url,
+            Some("https://cdn.example.com/bright_sdk_win-1.600.100-cert-override_hash.zip".to_string())
+        );
+    }
+
+    #[test]
+    fn resolve_falls_back_to_url_tpl_when_no_cert() {
+        let mut platforms = HashMap::new();
+        platforms.insert(
+            "win".to_string(),
+            PlatformConfig {
+                last_version: Some("1.617.770".to_string()),
+                url: None,
+                url_tpl: Some("{{base}}/bright_sdk_{{platform}}-{{version}}.zip".to_string()),
+                cert_url_tpl: None,
+                ver_hash: None,
+                sha256: None,
+            },
+        );
+        let mut templates = HashMap::new();
+        templates.insert("base".to_string(), "https://cdn.example.com".to_string());
+        let releases = ReleasesConfig { platforms, templates };
+
+        // No cert_url_tpl → falls back to url_tpl
+        let url = resolve_url_tpl(&releases, "win", "1.617.770");
+        assert_eq!(
+            url,
+            Some("https://cdn.example.com/bright_sdk_win-1.617.770.zip".to_string())
+        );
+    }
+
+    #[test]
+    fn no_cert_hash_error_display() {
+        let err = Error::NoCertHash("1.500.100".to_string());
+        let msg = err.to_string();
+        assert!(msg.contains("1.500.100"));
+        assert!(msg.contains("BrightSDK support"));
+        assert!(msg.contains("--hash"));
     }
 }

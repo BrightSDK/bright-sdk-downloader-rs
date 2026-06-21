@@ -111,6 +111,7 @@ $env:SDK_API_KEY = "<your-api-key>"
 | `-p, --platform` | Platform key (`android`, `ios`, `tizen`, `webos`, `node`, `win`, `macos`, `unity`) | required |
 | `-v, --version` | SDK version or `latest` | `latest` |
 | `-o, --output` | Output directory (fetch only) | `.` |
+| `-h, --hash` | Cert build hash override (for downloading older certified versions) | — |
 
 ### Environment
 
