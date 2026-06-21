@@ -34,20 +34,20 @@ fn main() {
 }
 
 fn cmd_resolve(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Error> {
-    let (platform, version, _, hash) = parse_args(args);
+    let (platform, version, _, hash, cert) = parse_args(args);
     let platform = platform.unwrap_or_else(|| {
-        eprintln!("Usage: {exe} resolve -p <platform> [-v <version>] [--hash <hash>]");
+        eprintln!("Usage: {exe} resolve -p <platform> [-v <version>] [--hash <hash>] [--cert]");
         process::exit(1);
     });
-    let result = resolve_sdk_with_hash(&platform, &version, hash.as_deref())?;
+    let result = resolve_sdk_with_hash(&platform, &version, hash.as_deref(), cert)?;
     println!("{}", serde_json::to_string(&result).unwrap());
     Ok(())
 }
 
 fn cmd_fetch(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Error> {
-    let (platform, version, output, hash) = parse_args(args);
+    let (platform, version, output, hash, cert) = parse_args(args);
     let platform = platform.unwrap_or_else(|| {
-        eprintln!("Usage: {exe} fetch -p <platform> [-v <version>] [-o <dir>] [--hash <hash>]");
+        eprintln!("Usage: {exe} fetch -p <platform> [-v <version>] [-o <dir>] [--hash <hash>] [--cert]");
         process::exit(1);
     });
 
@@ -71,6 +71,7 @@ fn cmd_fetch(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Erro
         &version,
         &output,
         hash.as_deref(),
+        cert,
         Some(Box::new(move |step, done, total| {
             if step != current_step {
                 let elapsed = step_start.elapsed().as_secs_f64();
@@ -113,11 +114,12 @@ fn cmd_platforms() -> Result<(), bright_sdk_download::Error> {
     Ok(())
 }
 
-fn parse_args(args: &[String]) -> (Option<String>, String, String, Option<String>) {
+fn parse_args(args: &[String]) -> (Option<String>, String, String, Option<String>, bool) {
     let mut platform = None;
     let mut version = "latest".to_string();
     let mut output = ".".to_string();
     let mut hash = None;
+    let mut cert = false;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -145,6 +147,9 @@ fn parse_args(args: &[String]) -> (Option<String>, String, String, Option<String
                     hash = Some(args[i].clone());
                 }
             }
+            "--cert" | "-c" => {
+                cert = true;
+            }
             other if !other.starts_with('-') && platform.is_none() => {
                 platform = Some(other.to_string());
             }
@@ -152,7 +157,7 @@ fn parse_args(args: &[String]) -> (Option<String>, String, String, Option<String
         }
         i += 1;
     }
-    (platform, version, output, hash)
+    (platform, version, output, hash, cert)
 }
 
 fn print_usage(exe: &str) {
@@ -165,12 +170,15 @@ fn print_usage(exe: &str) {
          Options:\n\
          \x20 -p, --platform   Platform key (android, ios, tizen...)\n\
          \x20 -v, --version    Version or \"latest\" (default: latest)\n\
-         \x20 -o, --output     Output directory (default: .)\n\n\
+         \x20 -o, --output     Output directory (default: .)\n\
+         \x20 -h, --hash       Override cert hash (win only)\n\
+         \x20 -c, --cert       Use certified URL (win only)\n\n\
          Environment:\n\
          \x20 SDK_API_KEY      Required. BrightSDK API key.\n\n\
          Examples:\n\
          \x20 {exe} resolve -p android\n\
          \x20 {exe} fetch -p ios -o ./libs\n\
+         \x20 {exe} fetch -p win --cert\n\
          \x20 {exe} platforms"
     );
 }

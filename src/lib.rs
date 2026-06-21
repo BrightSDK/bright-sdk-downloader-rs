@@ -27,13 +27,14 @@ const RELEASES_URL: &str = "https://bright-sdk.com/sdk_api/sdk/integration/confi
 
 // --- Data types ---
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PlatformConfig {
     pub last_version: Option<String>,
     pub url: Option<String>,
     pub url_tpl: Option<String>,
     pub cert_url_tpl: Option<String>,
     pub ver_hash: Option<String>,
+    pub certified: Option<bool>,
     pub sha256: Option<String>,
 }
 
@@ -149,13 +150,14 @@ pub fn fetch_releases() -> Result<ReleasesConfig, Error> {
 }
 
 pub fn resolve_sdk(platform_key: &str, version: &str) -> Result<ResolveResult, Error> {
-    resolve_sdk_with_hash(platform_key, version, None)
+    resolve_sdk_with_hash(platform_key, version, None, false)
 }
 
 pub fn resolve_sdk_with_hash(
     platform_key: &str,
     version: &str,
     hash_override: Option<&str>,
+    use_cert: bool,
 ) -> Result<ResolveResult, Error> {
     let releases = fetch_releases()?;
     let platform_data = releases.platforms.get(platform_key).ok_or_else(|| {
@@ -178,43 +180,31 @@ pub fn resolve_sdk_with_hash(
 
     let url = if let Some(ref u) = platform_data.url {
         u.clone()
-    } else {
-        // Try cert_url_tpl first (with hash from override or response)
+    } else if use_cert {
+        // Certified mode: require cert_url_tpl + hash
         let cert_hash = hash_override
             .map(|s| s.to_string())
             .or_else(|| platform_data.ver_hash.clone());
-        let cert_url = platform_data.cert_url_tpl.as_ref().and_then(|_| {
-            cert_hash.as_ref().map(|h| {
-                resolve_tpl_with_hash(&releases, platform_key, &ver, Some(h), true)
-            })
-        }).flatten();
-        if let Some(u) = cert_url {
-            u
-        } else {
-            resolve_tpl_with_hash(&releases, platform_key, &ver, None, false)
-                .ok_or_else(|| Error::NoUrl(platform_key.to_string()))?
-        }
-    };
-
-    // If primary URL is cert, provide url_tpl as fallback
-    let fallback_url = if platform_data.cert_url_tpl.is_some() && platform_data.url.is_none() {
-        resolve_tpl_with_hash(&releases, platform_key, &ver, None, false)
-            .filter(|f| f != &url)
+        let cert_hash = cert_hash.ok_or_else(|| Error::NoCertHash(ver.clone()))?;
+        resolve_tpl_with_hash(&releases, platform_key, &ver, Some(&cert_hash), true)
+            .ok_or_else(|| Error::NoUrl(platform_key.to_string()))?
     } else {
-        None
+        // Default: plain url_tpl
+        resolve_tpl_with_hash(&releases, platform_key, &ver, None, false)
+            .ok_or_else(|| Error::NoUrl(platform_key.to_string()))?
     };
 
     Ok(ResolveResult {
         platform: platform_key.to_string(),
         version: ver,
         url,
-        fallback_url,
+        fallback_url: None,
         sha256: platform_data.sha256.clone(),
     })
 }
 
 pub fn fetch_sdk(platform_key: &str, version: &str, output: &str) -> Result<FetchResult, Error> {
-    fetch_sdk_with_progress(platform_key, version, output, None, None)
+    fetch_sdk_with_progress(platform_key, version, output, None, false, None)
 }
 
 /// Download + extract with optional progress callback.
@@ -223,12 +213,13 @@ pub fn fetch_sdk_with_progress(
     version: &str,
     output: &str,
     hash_override: Option<&str>,
+    use_cert: bool,
     mut on_progress: Option<ProgressFn>,
 ) -> Result<FetchResult, Error> {
     if let Some(ref mut cb) = on_progress {
         cb(Step::Resolve, 0, 0);
     }
-    let resolved = resolve_sdk_with_hash(platform_key, version, hash_override)?;
+    let resolved = resolve_sdk_with_hash(platform_key, version, hash_override, use_cert)?;
     if let Some(ref mut cb) = on_progress {
         cb(Step::Resolve, 1, 1);
     }
@@ -258,27 +249,12 @@ pub fn fetch_sdk_with_progress(
     }
     // Take on_progress out so the download closure can own it temporarily
     let mut dl_cb = on_progress.take();
-    let mut actual_url = resolved.url.clone();
-    let dl_result = download_to_file(&actual_url, &archive_path, &mut |done, total| {
+    let actual_url = resolved.url.clone();
+    download_to_file(&actual_url, &archive_path, &mut |done, total| {
         if let Some(ref mut cb) = dl_cb {
             cb(Step::Download, done, total);
         }
-    });
-    // On 404, try fallback URL if available
-    if matches!(&dl_result, Err(Error::NotFound(_))) {
-        if let Some(ref fallback) = resolved.fallback_url {
-            actual_url = fallback.clone();
-            download_to_file(&actual_url, &archive_path, &mut |done, total| {
-                if let Some(ref mut cb) = dl_cb {
-                    cb(Step::Download, done, total);
-                }
-            })?;
-        } else {
-            dl_result?;
-        }
-    } else {
-        dl_result?;
-    }
+    })?;
     on_progress = dl_cb; // restore after download
 
     if let Some(ref expected_sha) = resolved.sha256 {
@@ -549,6 +525,7 @@ mod tests {
                 cert_url_tpl: None,
                 ver_hash: None,
                 sha256: None,
+                certified: None,
             },
         );
         let mut templates = HashMap::new();
@@ -577,6 +554,7 @@ mod tests {
                 cert_url_tpl: None,
                 ver_hash: None,
                 sha256: None,
+                certified: None,
             },
         );
         let mut templates = HashMap::new();
@@ -615,6 +593,7 @@ mod tests {
                 cert_url_tpl: None,
                 ver_hash: None,
                 sha256: None,
+                certified: None,
             },
         );
         let releases = ReleasesConfig {
@@ -676,6 +655,7 @@ mod tests {
                 ),
                 ver_hash: Some("3948271605".to_string()),
                 sha256: None,
+                certified: None,
             },
         );
         let mut templates = HashMap::new();
@@ -707,6 +687,7 @@ mod tests {
                 ),
                 ver_hash: Some("server_hash".to_string()),
                 sha256: None,
+                certified: None,
             },
         );
         let mut templates = HashMap::new();
@@ -735,6 +716,7 @@ mod tests {
                 cert_url_tpl: None,
                 ver_hash: None,
                 sha256: None,
+                certified: None,
             },
         );
         let mut templates = HashMap::new();

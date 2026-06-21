@@ -11,18 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Certified build support: prefer `cert_url_tpl` over `url_tpl` when `ver_hash` is available
-- Automatic 404 fallback: if certified URL returns 404, transparently retries with `url_tpl`
+- `-c, --cert` CLI flag to opt-in to certified URL download (Windows only)
+- Certified build support: uses `cert_url_tpl` when `--cert` is passed and `ver_hash` is available
 - `-h, --hash` CLI flag to supply a cert build hash for downloading older certified versions
-- Clear error message when certified hash is unavailable for a requested version (suggests `--hash` or contacting support)
-- `resolve_sdk_with_hash()` public API for programmatic hash override
-- `ResolveResult.fallback_url` field for transparent fallback handling
+- Clear error when certified hash is unavailable for a requested version (suggests `--hash` or contacting support)
+- `resolve_sdk_with_hash(platform, version, hash_override, use_cert)` public API
+- `PlatformConfig` struct has new optional fields: `cert_url_tpl`, `ver_hash`, `certified`
+- `Error::NotFound` for HTTP 404 responses
+- `Error::NoCertHash` when `--cert` is used but no hash is available
 
 ### Changed
 
-- `fetch_sdk_with_progress()` now accepts an optional `hash_override` parameter
-- `PlatformConfig` struct has new optional fields: `cert_url_tpl`, `ver_hash`
-- Download distinguishes HTTP 404 from other errors (`Error::NotFound`)
+- `fetch_sdk_with_progress()` now accepts `hash_override` and `use_cert` parameters
+- Certified URL is **opt-in** via `--cert`; default download uses plain `url_tpl`
 
 ## [1.0.2] - 2026-06-01
 
