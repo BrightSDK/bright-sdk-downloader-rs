@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-06-22
+
+### Added
+
+- Unit tests for `resolve_from_releases`: cert mode URL selection, plain-URL fallback,
+  `NoCertHash` error, hash override precedence, `latest` version resolution,
+  unknown platform error
+- Unit tests for `parse_args`: `--cert` / `-c` flag, `--hash` / `-h` + `--cert` together,
+  all flags combined, default cert=false
+
+### Changed
+
+- Refactored `resolve_sdk_with_hash` into `resolve_from_releases` (private) so URL
+  routing logic is unit-testable without a network call
+
 ## [1.1.0] - 2026-06-21
 
 ### Added

@@ -23,6 +23,7 @@ Single source of truth for downloading BrightSDK archives across all integration
 
 - Version resolution via BrightSDK API
 - Archive download from CDN (HTTPS + redirect handling)
+- Certified build support for Windows SDK via `--cert` flag
 - Extraction with Zip Slip protection and Unix permission preservation
 - SHA-256 integrity verification
 - Zero runtime dependencies — fully statically linked
@@ -112,6 +113,7 @@ $env:SDK_API_KEY = "<your-api-key>"
 | `-v, --version` | SDK version or `latest` | `latest` |
 | `-o, --output` | Output directory (fetch only) | `.` |
 | `-h, --hash` | Cert build hash override (for downloading older certified versions) | — |
+| `-c, --cert` | Use certified build URL (Windows only; requires `ver_hash` from the API) | `false` |
 
 ### Environment
 

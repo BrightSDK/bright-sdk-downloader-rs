@@ -160,6 +160,63 @@ fn parse_args(args: &[String]) -> (Option<String>, String, String, Option<String
     (platform, version, output, hash, cert)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::parse_args;
+
+    #[test]
+    fn parse_args_cert_long_flag() {
+        let args: Vec<String> =
+            vec!["-p".into(), "win".into(), "--cert".into()];
+        let (platform, _, _, _, cert) = parse_args(&args);
+        assert_eq!(platform.as_deref(), Some("win"));
+        assert!(cert);
+    }
+
+    #[test]
+    fn parse_args_cert_short_flag() {
+        let args: Vec<String> = vec!["-p".into(), "win".into(), "-c".into()];
+        let (_, _, _, _, cert) = parse_args(&args);
+        assert!(cert);
+    }
+
+    #[test]
+    fn parse_args_cert_false_by_default() {
+        let args: Vec<String> = vec!["-p".into(), "android".into()];
+        let (_, _, _, _, cert) = parse_args(&args);
+        assert!(!cert);
+    }
+
+    #[test]
+    fn parse_args_hash_and_cert_together() {
+        let args: Vec<String> = vec![
+            "-p".into(), "win".into(),
+            "--hash".into(), "abc123".into(),
+            "--cert".into(),
+        ];
+        let (_, _, _, hash, cert) = parse_args(&args);
+        assert_eq!(hash.as_deref(), Some("abc123"));
+        assert!(cert);
+    }
+
+    #[test]
+    fn parse_args_all_flags() {
+        let args: Vec<String> = vec![
+            "-p".into(), "win".into(),
+            "-v".into(), "1.617.770".into(),
+            "-o".into(), "/tmp".into(),
+            "-h".into(), "deadbeef".into(),
+            "-c".into(),
+        ];
+        let (platform, version, output, hash, cert) = parse_args(&args);
+        assert_eq!(platform.as_deref(), Some("win"));
+        assert_eq!(version, "1.617.770");
+        assert_eq!(output, "/tmp");
+        assert_eq!(hash.as_deref(), Some("deadbeef"));
+        assert!(cert);
+    }
+}
+
 fn print_usage(exe: &str) {
     eprintln!(
         "{exe} — BrightSDK download CLI (Rust)\n\n\

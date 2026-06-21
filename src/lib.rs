@@ -160,6 +160,16 @@ pub fn resolve_sdk_with_hash(
     use_cert: bool,
 ) -> Result<ResolveResult, Error> {
     let releases = fetch_releases()?;
+    resolve_from_releases(&releases, platform_key, version, hash_override, use_cert)
+}
+
+fn resolve_from_releases(
+    releases: &ReleasesConfig,
+    platform_key: &str,
+    version: &str,
+    hash_override: Option<&str>,
+    use_cert: bool,
+) -> Result<ResolveResult, Error> {
     let platform_data = releases.platforms.get(platform_key).ok_or_else(|| {
         let available: Vec<&str> = releases.platforms.keys().map(|s| s.as_str()).collect();
         Error::UnknownPlatform(format!(
@@ -186,11 +196,11 @@ pub fn resolve_sdk_with_hash(
             .map(|s| s.to_string())
             .or_else(|| platform_data.ver_hash.clone());
         let cert_hash = cert_hash.ok_or_else(|| Error::NoCertHash(ver.clone()))?;
-        resolve_tpl_with_hash(&releases, platform_key, &ver, Some(&cert_hash), true)
+        resolve_tpl_with_hash(releases, platform_key, &ver, Some(&cert_hash), true)
             .ok_or_else(|| Error::NoUrl(platform_key.to_string()))?
     } else {
         // Default: plain url_tpl
-        resolve_tpl_with_hash(&releases, platform_key, &ver, None, false)
+        resolve_tpl_with_hash(releases, platform_key, &ver, None, false)
             .ok_or_else(|| Error::NoUrl(platform_key.to_string()))?
     };
 
@@ -738,5 +748,83 @@ mod tests {
         assert!(msg.contains("1.500.100"));
         assert!(msg.contains("BrightSDK support"));
         assert!(msg.contains("--hash"));
+    }
+
+    fn make_win_releases(ver_hash: Option<&str>) -> ReleasesConfig {
+        let mut platforms = HashMap::new();
+        platforms.insert(
+            "win".to_string(),
+            PlatformConfig {
+                last_version: Some("1.617.770".to_string()),
+                url: None,
+                url_tpl: Some(
+                    "{{base}}/bright_sdk_{{platform}}-{{version}}.zip".to_string(),
+                ),
+                cert_url_tpl: Some(
+                    "{{base}}/bright_sdk_{{platform}}-{{version}}-cert-{{ver_hash}}.zip"
+                        .to_string(),
+                ),
+                ver_hash: ver_hash.map(|s| s.to_string()),
+                sha256: None,
+                certified: None,
+            },
+        );
+        let mut templates = HashMap::new();
+        templates.insert("base".to_string(), "https://cdn.example.com".to_string());
+        ReleasesConfig { platforms, templates }
+    }
+
+    #[test]
+    fn resolve_from_releases_cert_mode_uses_cert_url() {
+        let releases = make_win_releases(Some("abc123"));
+        let r = resolve_from_releases(&releases, "win", "1.617.770", None, true).unwrap();
+        assert_eq!(
+            r.url,
+            "https://cdn.example.com/bright_sdk_win-1.617.770-cert-abc123.zip"
+        );
+    }
+
+    #[test]
+    fn resolve_from_releases_no_cert_mode_uses_plain_url() {
+        let releases = make_win_releases(Some("abc123"));
+        let r = resolve_from_releases(&releases, "win", "1.617.770", None, false).unwrap();
+        assert_eq!(
+            r.url,
+            "https://cdn.example.com/bright_sdk_win-1.617.770.zip"
+        );
+    }
+
+    #[test]
+    fn resolve_from_releases_cert_no_hash_returns_error() {
+        let releases = make_win_releases(None);
+        let err = resolve_from_releases(&releases, "win", "1.617.770", None, true)
+            .unwrap_err();
+        assert!(matches!(err, Error::NoCertHash(_)));
+    }
+
+    #[test]
+    fn resolve_from_releases_hash_override_takes_precedence() {
+        let releases = make_win_releases(Some("server_hash"));
+        let r = resolve_from_releases(
+            &releases, "win", "1.617.770", Some("my_override"), true,
+        )
+        .unwrap();
+        assert!(r.url.contains("my_override"));
+        assert!(!r.url.contains("server_hash"));
+    }
+
+    #[test]
+    fn resolve_from_releases_latest_resolves_version() {
+        let releases = make_win_releases(None);
+        let r = resolve_from_releases(&releases, "win", "latest", None, false).unwrap();
+        assert_eq!(r.version, "1.617.770");
+    }
+
+    #[test]
+    fn resolve_from_releases_unknown_platform_error() {
+        let releases = make_win_releases(None);
+        let err = resolve_from_releases(&releases, "tizen", "1.0.0", None, false)
+            .unwrap_err();
+        assert!(matches!(err, Error::UnknownPlatform(_)));
     }
 }
