@@ -47,7 +47,9 @@ fn cmd_resolve(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Er
 fn cmd_fetch(args: &[String], exe: &str) -> Result<(), bright_sdk_download::Error> {
     let (platform, version, output, hash, cert) = parse_args(args);
     let platform = platform.unwrap_or_else(|| {
-        eprintln!("Usage: {exe} fetch -p <platform> [-v <version>] [-o <dir>] [--hash <hash>] [--cert]");
+        eprintln!(
+            "Usage: {exe} fetch -p <platform> [-v <version>] [-o <dir>] [--hash <hash>] [--cert]"
+        );
         process::exit(1);
     });
 
@@ -160,14 +162,36 @@ fn parse_args(args: &[String]) -> (Option<String>, String, String, Option<String
     (platform, version, output, hash, cert)
 }
 
+fn print_usage(exe: &str) {
+    eprintln!(
+        "{exe} — BrightSDK download CLI (Rust)\n\n\
+         Commands:\n\
+         \x20 resolve    Resolve version + download URL (JSON)\n\
+         \x20 fetch      Download and extract SDK archive\n\
+         \x20 platforms  List available platform keys\n\n\
+         Options:\n\
+         \x20 -p, --platform   Platform key (android, ios, tizen...)\n\
+         \x20 -v, --version    Version or \"latest\" (default: latest)\n\
+         \x20 -o, --output     Output directory (default: .)\n\
+         \x20 -h, --hash       Override cert hash (win only)\n\
+         \x20 -c, --cert       Use certified URL (win only)\n\n\
+         Environment:\n\
+         \x20 SDK_API_KEY      Required. BrightSDK API key.\n\n\
+         Examples:\n\
+         \x20 {exe} resolve -p android\n\
+         \x20 {exe} fetch -p ios -o ./libs\n\
+         \x20 {exe} fetch -p win --cert\n\
+         \x20 {exe} platforms"
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::parse_args;
 
     #[test]
     fn parse_args_cert_long_flag() {
-        let args: Vec<String> =
-            vec!["-p".into(), "win".into(), "--cert".into()];
+        let args: Vec<String> = vec!["-p".into(), "win".into(), "--cert".into()];
         let (platform, _, _, _, cert) = parse_args(&args);
         assert_eq!(platform.as_deref(), Some("win"));
         assert!(cert);
@@ -190,8 +214,10 @@ mod tests {
     #[test]
     fn parse_args_hash_and_cert_together() {
         let args: Vec<String> = vec![
-            "-p".into(), "win".into(),
-            "--hash".into(), "abc123".into(),
+            "-p".into(),
+            "win".into(),
+            "--hash".into(),
+            "abc123".into(),
             "--cert".into(),
         ];
         let (_, _, _, hash, cert) = parse_args(&args);
@@ -202,10 +228,14 @@ mod tests {
     #[test]
     fn parse_args_all_flags() {
         let args: Vec<String> = vec![
-            "-p".into(), "win".into(),
-            "-v".into(), "1.617.770".into(),
-            "-o".into(), "/tmp".into(),
-            "-h".into(), "deadbeef".into(),
+            "-p".into(),
+            "win".into(),
+            "-v".into(),
+            "1.617.770".into(),
+            "-o".into(),
+            "/tmp".into(),
+            "-h".into(),
+            "deadbeef".into(),
             "-c".into(),
         ];
         let (platform, version, output, hash, cert) = parse_args(&args);
@@ -215,27 +245,4 @@ mod tests {
         assert_eq!(hash.as_deref(), Some("deadbeef"));
         assert!(cert);
     }
-}
-
-fn print_usage(exe: &str) {
-    eprintln!(
-        "{exe} — BrightSDK download CLI (Rust)\n\n\
-         Commands:\n\
-         \x20 resolve    Resolve version + download URL (JSON)\n\
-         \x20 fetch      Download and extract SDK archive\n\
-         \x20 platforms  List available platform keys\n\n\
-         Options:\n\
-         \x20 -p, --platform   Platform key (android, ios, tizen...)\n\
-         \x20 -v, --version    Version or \"latest\" (default: latest)\n\
-         \x20 -o, --output     Output directory (default: .)\n\
-         \x20 -h, --hash       Override cert hash (win only)\n\
-         \x20 -c, --cert       Use certified URL (win only)\n\n\
-         Environment:\n\
-         \x20 SDK_API_KEY      Required. BrightSDK API key.\n\n\
-         Examples:\n\
-         \x20 {exe} resolve -p android\n\
-         \x20 {exe} fetch -p ios -o ./libs\n\
-         \x20 {exe} fetch -p win --cert\n\
-         \x20 {exe} platforms"
-    );
 }

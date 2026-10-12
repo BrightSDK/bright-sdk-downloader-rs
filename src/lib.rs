@@ -95,10 +95,12 @@ impl std::fmt::Display for Error {
             Error::UnknownPlatform(p) => write!(f, "Unknown platform '{p}'"),
             Error::NoVersion(p) => write!(f, "No latest version for platform '{p}'"),
             Error::NoUrl(p) => write!(f, "Cannot resolve download URL for '{p}'"),
-            Error::NoCertHash(v) => write!(f,
+            Error::NoCertHash(v) => write!(
+                f,
                 "Certified build hash not available for version '{v}'. \
                  Only the latest version is served as certified. \
-                 For older versions, provide --hash or contact BrightSDK support."),
+                 For older versions, provide --hash or contact BrightSDK support."
+            ),
             Error::Extract(e) => write!(f, "Extraction error: {e}"),
         }
     }
@@ -670,15 +672,18 @@ mod tests {
         );
         let mut templates = HashMap::new();
         templates.insert("base".to_string(), "https://cdn.example.com".to_string());
-        let releases = ReleasesConfig { platforms, templates };
+        let releases = ReleasesConfig {
+            platforms,
+            templates,
+        };
 
         // cert_url_tpl should resolve with ver_hash
-        let url = resolve_tpl_with_hash(
-            &releases, "win", "1.617.770", Some("3948271605"), true,
-        );
+        let url = resolve_tpl_with_hash(&releases, "win", "1.617.770", Some("3948271605"), true);
         assert_eq!(
             url,
-            Some("https://cdn.example.com/bright_sdk_win-1.617.770-cert-3948271605.zip".to_string())
+            Some(
+                "https://cdn.example.com/bright_sdk_win-1.617.770-cert-3948271605.zip".to_string()
+            )
         );
     }
 
@@ -702,15 +707,19 @@ mod tests {
         );
         let mut templates = HashMap::new();
         templates.insert("base".to_string(), "https://cdn.example.com".to_string());
-        let releases = ReleasesConfig { platforms, templates };
+        let releases = ReleasesConfig {
+            platforms,
+            templates,
+        };
 
         // hash override takes precedence over ver_hash from response
-        let url = resolve_tpl_with_hash(
-            &releases, "win", "1.600.100", Some("override_hash"), true,
-        );
+        let url = resolve_tpl_with_hash(&releases, "win", "1.600.100", Some("override_hash"), true);
         assert_eq!(
             url,
-            Some("https://cdn.example.com/bright_sdk_win-1.600.100-cert-override_hash.zip".to_string())
+            Some(
+                "https://cdn.example.com/bright_sdk_win-1.600.100-cert-override_hash.zip"
+                    .to_string()
+            )
         );
     }
 
@@ -731,7 +740,10 @@ mod tests {
         );
         let mut templates = HashMap::new();
         templates.insert("base".to_string(), "https://cdn.example.com".to_string());
-        let releases = ReleasesConfig { platforms, templates };
+        let releases = ReleasesConfig {
+            platforms,
+            templates,
+        };
 
         // No cert_url_tpl → falls back to url_tpl
         let url = resolve_url_tpl(&releases, "win", "1.617.770");
@@ -757,9 +769,7 @@ mod tests {
             PlatformConfig {
                 last_version: Some("1.617.770".to_string()),
                 url: None,
-                url_tpl: Some(
-                    "{{base}}/bright_sdk_{{platform}}-{{version}}.zip".to_string(),
-                ),
+                url_tpl: Some("{{base}}/bright_sdk_{{platform}}-{{version}}.zip".to_string()),
                 cert_url_tpl: Some(
                     "{{base}}/bright_sdk_{{platform}}-{{version}}-cert-{{ver_hash}}.zip"
                         .to_string(),
@@ -771,7 +781,10 @@ mod tests {
         );
         let mut templates = HashMap::new();
         templates.insert("base".to_string(), "https://cdn.example.com".to_string());
-        ReleasesConfig { platforms, templates }
+        ReleasesConfig {
+            platforms,
+            templates,
+        }
     }
 
     #[test]
@@ -797,18 +810,15 @@ mod tests {
     #[test]
     fn resolve_from_releases_cert_no_hash_returns_error() {
         let releases = make_win_releases(None);
-        let err = resolve_from_releases(&releases, "win", "1.617.770", None, true)
-            .unwrap_err();
+        let err = resolve_from_releases(&releases, "win", "1.617.770", None, true).unwrap_err();
         assert!(matches!(err, Error::NoCertHash(_)));
     }
 
     #[test]
     fn resolve_from_releases_hash_override_takes_precedence() {
         let releases = make_win_releases(Some("server_hash"));
-        let r = resolve_from_releases(
-            &releases, "win", "1.617.770", Some("my_override"), true,
-        )
-        .unwrap();
+        let r = resolve_from_releases(&releases, "win", "1.617.770", Some("my_override"), true)
+            .unwrap();
         assert!(r.url.contains("my_override"));
         assert!(!r.url.contains("server_hash"));
     }
@@ -823,8 +833,7 @@ mod tests {
     #[test]
     fn resolve_from_releases_unknown_platform_error() {
         let releases = make_win_releases(None);
-        let err = resolve_from_releases(&releases, "tizen", "1.0.0", None, false)
-            .unwrap_err();
+        let err = resolve_from_releases(&releases, "tizen", "1.0.0", None, false).unwrap_err();
         assert!(matches!(err, Error::UnknownPlatform(_)));
     }
 }
